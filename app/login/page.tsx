@@ -48,71 +48,95 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-3">🏢</div>
-          <h1 className="text-2xl font-bold text-gray-900">Domovník Admin</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {step === 'password' ? 'Správa systému' : 'Dvojfaktorové overenie'}
-          </p>
+    <div style={{ backgroundColor: '#f0f2f5' }} className="min-h-screen flex flex-col items-center justify-center">
+      {/* Logo */}
+      <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+            <rect width="56" height="56" rx="12" fill="#1a3a6b"/>
+            <rect x="10" y="20" width="36" height="26" rx="2" fill="white" fillOpacity="0.9"/>
+            <rect x="14" y="24" width="6" height="6" rx="1" fill="#1a3a6b"/>
+            <rect x="24" y="24" width="6" height="6" rx="1" fill="#1a3a6b"/>
+            <rect x="34" y="24" width="6" height="6" rx="1" fill="#1a3a6b"/>
+            <rect x="14" y="34" width="6" height="6" rx="1" fill="#1a3a6b"/>
+            <rect x="24" y="34" width="6" height="6" rx="1" fill="#1a3a6b"/>
+            <rect x="34" y="34" width="6" height="6" rx="1" fill="#1a3a6b"/>
+            <rect x="20" y="8" width="16" height="14" rx="2" fill="white" fillOpacity="0.7"/>
+          </svg>
         </div>
+        <h1 style={{ color: '#1a3a6b' }} className="text-3xl font-bold">Domovník</h1>
+        <p className="text-gray-500 text-sm mt-1">
+          {step === 'password' ? 'Admin panel' : 'Dvojfaktorové overenie'}
+        </p>
+      </div>
+
+      {/* Karta */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-sm">
+        <h2 className="text-lg font-semibold text-gray-800 mb-6">
+          {step === 'password' ? 'Prihlásenie' : 'Overenie identity'}
+        </h2>
 
         {step === 'password' ? (
           <form onSubmit={handlePassword} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Heslo</label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                 placeholder="Admin heslo"
                 required
                 autoFocus
               />
             </div>
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+            {error && <p className="text-red-500 text-xs text-center">{error}</p>}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-900 text-white rounded-lg py-2.5 font-medium hover:bg-blue-800 transition disabled:opacity-50"
+              style={{ backgroundColor: '#1a3a6b' }}
+              className="w-full text-white rounded-xl py-3 text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
             >
-              {loading ? 'Overujem...' : 'Pokračovať →'}
+              {loading ? 'Overujem...' : 'Pokračovať'}
             </button>
           </form>
         ) : (
           <form onSubmit={handleTotp} className="space-y-4">
-            <div className="bg-blue-50 rounded-lg p-4 text-center">
+            <div className="bg-blue-50 rounded-xl p-4 text-center">
               <p className="text-sm text-blue-700">
                 Otvorte <strong>Google Authenticator</strong> a zadajte kód pre <strong>Domovník Admin</strong>
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">6-ciferný kód</label>
               <input
                 type="text"
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-2xl tracking-widest font-mono"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-center text-2xl tracking-widest font-mono focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                 placeholder="000000"
                 maxLength={6}
                 required
                 autoFocus
               />
             </div>
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+            {error && <p className="text-red-500 text-xs text-center">{error}</p>}
             <button
               type="submit"
               disabled={loading || totpCode.length !== 6}
-              className="w-full bg-blue-900 text-white rounded-lg py-2.5 font-medium hover:bg-blue-800 transition disabled:opacity-50"
+              style={{ backgroundColor: '#1a3a6b' }}
+              className="w-full text-white rounded-xl py-3 text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
             >
               {loading ? 'Overujem...' : 'Prihlásiť sa'}
             </button>
             <button
               type="button"
               onClick={() => { setStep('password'); setError('') }}
-              className="w-full text-gray-500 text-sm hover:text-gray-700 transition"
+              className="w-full text-gray-400 text-sm hover:text-gray-600 transition"
             >
               ← Späť
             </button>

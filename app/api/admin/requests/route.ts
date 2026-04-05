@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     // 8. Pošli email cez Resend
     await resend.emails.send({
-      from: 'Domovník <domovnik.app@gmail.com>',
+      from: 'Domovník <onboarding@resend.dev>',
       to: email,
       subject: 'Váš účet správcu bol schválený – Domovník',
       html: `

@@ -1,3 +1,5 @@
+export const revalidate = 0
+
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import Sidebar from '@/components/Sidebar'
 
@@ -17,7 +19,10 @@ export default async function BuildingsPage() {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           {!buildings || buildings.length === 0 ? (
             <div className="p-12 text-center text-gray-400">
-              <div className="text-4xl mb-3">🏢</div>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 text-gray-300">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
               <p>Žiadne budovy</p>
             </div>
           ) : (

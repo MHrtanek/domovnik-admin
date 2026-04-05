@@ -21,7 +21,10 @@ export default async function ManagersPage() {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           {!managers || managers.length === 0 ? (
             <div className="p-12 text-center text-gray-400">
-              <div className="text-4xl mb-3">👔</div>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 text-gray-300">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
               <p>Žiadni správcovia</p>
             </div>
           ) : (

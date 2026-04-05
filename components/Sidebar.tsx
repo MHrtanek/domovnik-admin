@@ -57,6 +57,15 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    href: '/forum',
+    label: 'Fórum',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    ),
+  },
 ]
 
 export default function Sidebar() {
@@ -70,19 +79,12 @@ export default function Sidebar() {
 
   return (
     <aside style={{ backgroundColor: '#1a3a6b' }} className="w-60 min-h-screen flex flex-col">
-      {/* Logo */}
       <div className="px-6 py-6 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <svg width="32" height="32" viewBox="0 0 56 56" fill="none">
-            <rect width="56" height="56" rx="10" fill="white" fillOpacity="0.15"/>
-            <rect x="10" y="20" width="36" height="26" rx="2" fill="white" fillOpacity="0.9"/>
-            <rect x="14" y="24" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="24" y="24" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="34" y="24" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="14" y="34" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="24" y="34" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="34" y="34" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="20" y="8" width="16" height="14" rx="2" fill="white" fillOpacity="0.7"/>
+          <svg width="32" height="32" viewBox="0 0 120 120" fill="none">
+            <rect width="120" height="120" rx="60" fill="rgba(255,255,255,0.15)"/>
+            <rect x="28" y="25" width="12" height="70" rx="4" fill="white"/>
+            <path d="M40 25 Q95 25 95 60 Q95 95 40 95" fill="none" stroke="white" stroke-width="12" stroke-linecap="round"/>
           </svg>
           <div>
             <div className="text-white font-bold text-base">Domovník</div>
@@ -91,7 +93,6 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
           const isActive = pathname === item.href
@@ -114,7 +115,6 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Logout */}
       <div className="px-3 py-4 border-t border-white/10">
         <button
           onClick={handleLogout}

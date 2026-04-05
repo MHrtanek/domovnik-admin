@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [step, setStep] = useState<'password' | 'totp'>('password')
   const [password, setPassword] = useState('')
   const [totpCode, setTotpCode] = useState('')
+  const [trustDevice, setTrustDevice] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -20,8 +21,14 @@ export default function LoginPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ step: 'password', password }),
     })
+    const data = await res.json()
     if (res.ok) {
-      setStep('totp')
+      if (data.skipTotp) {
+        router.push('/')
+        router.refresh()
+      } else {
+        setStep('totp')
+      }
     } else {
       setError('Nesprávne heslo')
     }
@@ -35,7 +42,7 @@ export default function LoginPage() {
     const res = await fetch('/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ step: 'totp', code: totpCode }),
+      body: JSON.stringify({ step: 'totp', code: totpCode, trustDevice }),
     })
     if (res.ok) {
       router.push('/')
@@ -49,19 +56,12 @@ export default function LoginPage() {
 
   return (
     <div style={{ backgroundColor: '#f0f2f5' }} className="min-h-screen flex flex-col items-center justify-center">
-      {/* Logo */}
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
-          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-            <rect width="56" height="56" rx="12" fill="#1a3a6b"/>
-            <rect x="10" y="20" width="36" height="26" rx="2" fill="white" fillOpacity="0.9"/>
-            <rect x="14" y="24" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="24" y="24" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="34" y="24" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="14" y="34" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="24" y="34" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="34" y="34" width="6" height="6" rx="1" fill="#1a3a6b"/>
-            <rect x="20" y="8" width="16" height="14" rx="2" fill="white" fillOpacity="0.7"/>
+          <svg width="56" height="56" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="120" height="120" rx="60" fill="#1a3a6b"/>
+            <rect x="28" y="25" width="12" height="70" rx="4" fill="white"/>
+            <path d="M40 25 Q95 25 95 60 Q95 95 40 95" fill="none" stroke="white" strokeWidth="12" strokeLinecap="round"/>
           </svg>
         </div>
         <h1 style={{ color: '#1a3a6b' }} className="text-3xl font-bold">Domovník</h1>
@@ -70,7 +70,6 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Karta */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-sm">
         <h2 className="text-lg font-semibold text-gray-800 mb-6">
           {step === 'password' ? 'Prihlásenie' : 'Overenie identity'}
@@ -124,6 +123,15 @@ export default function LoginPage() {
                 autoFocus
               />
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={trustDevice}
+                onChange={(e) => setTrustDevice(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm text-gray-600">Zapamätať toto zariadenie na 30 dní</span>
+            </label>
             {error && <p className="text-red-500 text-xs text-center">{error}</p>}
             <button
               type="submit"

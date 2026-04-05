@@ -4,6 +4,16 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 export async function POST(request: NextRequest) {
   const { requestId, action, email, fullName, buildingName, buildingAddress } = await request.json()
 
+  // Vymazať žiadosť úplne
+  if (action === 'delete') {
+    await supabaseAdmin
+      .from('registration_requests')
+      .delete()
+      .eq('id', requestId)
+    return NextResponse.json({ ok: true })
+  }
+
+  // Zamietnuť žiadosť
   if (action === 'reject') {
     await supabaseAdmin
       .from('registration_requests')
@@ -12,22 +22,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // Schváliť žiadosť
   if (action === 'approve') {
-    // 1. Vytvor Auth používateľa
-    const tempPassword = Math.random().toString(36).slice(-10) + 'Aa1!'
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: tempPassword,
-      email_confirm: true,
-    })
-
-    if (authError || !authData.user) {
-      return NextResponse.json({ error: authError?.message }, { status: 500 })
-    }
-
-    const userId = authData.user.id
-
-    // 2. Vytvor budovu
+    // 1. Vytvor budovu
     const { data: building, error: buildingError } = await supabaseAdmin
       .from('buildings')
       .insert({ name: buildingName, address: buildingAddress })
@@ -37,6 +34,24 @@ export async function POST(request: NextRequest) {
     if (buildingError || !building) {
       return NextResponse.json({ error: buildingError?.message }, { status: 500 })
     }
+
+    // 2. Pošli invite email cez Supabase (správca si nastaví heslo sám)
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      data: {
+        full_name: fullName,
+        role: 'manager',
+        building_id: building.id,
+      },
+      redirectTo: 'https://domovnik-app.vercel.app',
+    })
+
+    if (inviteError || !inviteData.user) {
+      // Vymaž budovu ak invite zlyhalo
+      await supabaseAdmin.from('buildings').delete().eq('id', building.id)
+      return NextResponse.json({ error: inviteError?.message }, { status: 500 })
+    }
+
+    const userId = inviteData.user.id
 
     // 3. Vytvor profil správcu
     await supabaseAdmin.from('profiles').insert({
@@ -59,10 +74,7 @@ export async function POST(request: NextRequest) {
       .update({ status: 'approved' })
       .eq('id', requestId)
 
-    // TODO: Poslať email správcovi s dočasným heslom: tempPassword
-    console.log(`Schválený správca: ${email}, dočasné heslo: ${tempPassword}`)
-
-    return NextResponse.json({ ok: true, tempPassword })
+    return NextResponse.json({ ok: true })
   }
 
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 })

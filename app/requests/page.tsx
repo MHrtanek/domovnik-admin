@@ -52,7 +52,14 @@ export default async function RequestsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {req.status === 'pending' && <RequestActions requestId={req.id} email={req.email} fullName={req.full_name} buildingName={req.building_name} buildingAddress={req.building_address} />}
+                      <RequestActions
+                        requestId={req.id}
+                        email={req.email}
+                        fullName={req.full_name}
+                        buildingName={req.building_name}
+                        buildingAddress={req.building_address}
+                        status={req.status}
+                      />
                     </td>
                   </tr>
                 ))}

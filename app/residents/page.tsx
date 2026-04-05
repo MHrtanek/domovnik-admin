@@ -1,5 +1,8 @@
+export const revalidate = 0
+
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import Sidebar from '@/components/Sidebar'
+import DeleteUserButton from '@/components/DeleteUserButton'
 
 export default async function ResidentsPage() {
   const { data: residents } = await supabaseAdmin
@@ -30,6 +33,7 @@ export default async function ResidentsPage() {
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Byt</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Budova</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Registrovaný</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Akcia</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -48,6 +52,9 @@ export default async function ResidentsPage() {
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-sm">
                       {new Date(r.created_at).toLocaleDateString('sk-SK')}
+                    </td>
+                    <td className="px-6 py-4">
+                      <DeleteUserButton userId={r.id} name={r.full_name ?? r.email} />
                     </td>
                   </tr>
                 ))}

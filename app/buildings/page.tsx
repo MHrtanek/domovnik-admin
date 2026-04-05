@@ -2,11 +2,12 @@ export const revalidate = 0
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import Sidebar from '@/components/Sidebar'
+import DeleteUserButton from '@/components/DeleteUserButton'
 
 export default async function BuildingsPage() {
   const { data: buildings } = await supabaseAdmin
     .from('buildings')
-    .select('*, profiles!buildings_manager_id_fkey(full_name, email)')
+    .select('*, profiles!buildings_manager_id_fkey(id, full_name, email)')
     .order('created_at', { ascending: false })
 
   return (
@@ -33,6 +34,7 @@ export default async function BuildingsPage() {
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Adresa</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Správca</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Vytvorená</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Akcia</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -50,6 +52,13 @@ export default async function BuildingsPage() {
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-sm">
                       {new Date(b.created_at).toLocaleDateString('sk-SK')}
+                    </td>
+                    <td className="px-6 py-4">
+                      {b.profiles ? (
+                        <DeleteUserButton userId={b.profiles.id} name={`${b.name} + správca ${b.profiles.full_name}`} />
+                      ) : (
+                        <span className="text-xs text-gray-400">Bez správcu</span>
+                      )}
                     </td>
                   </tr>
                 ))}

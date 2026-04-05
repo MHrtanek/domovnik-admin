@@ -4,36 +4,53 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 export async function DELETE(request: NextRequest) {
   const { userId } = await request.json()
 
-  // 1. Zisti či je správca — zmaž jeho budovu
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('role, building_id')
-    .eq('id', userId)
-    .single()
-
-  if (profile?.role === 'manager' && profile?.building_id) {
-    // Najprv vymaž všetkých obyvateľov budovy
-    const { data: residents } = await supabaseAdmin
+  try {
+    // 1. Zisti rolu a building_id
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('id')
-      .eq('building_id', profile.building_id)
-      .eq('role', 'resident')
+      .select('role, building_id')
+      .eq('id', userId)
+      .single()
 
-    if (residents) {
-      for (const resident of residents) {
-        await supabaseAdmin.auth.admin.deleteUser(resident.id)
+    if (profile?.role === 'manager' && profile?.building_id) {
+      const buildingId = profile.building_id
+
+      // 2. Načítaj všetkých obyvateľov budovy
+      const { data: residents } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('building_id', buildingId)
+        .eq('role', 'resident')
+
+      // 3. Vymaž každého obyvateľa z Auth
+      if (residents) {
+        for (const resident of residents) {
+          await supabaseAdmin.auth.admin.deleteUser(resident.id)
+        }
       }
+
+      // 4. Odpoč manager_id z budovy
+      await supabaseAdmin
+        .from('buildings')
+        .update({ manager_id: null })
+        .eq('id', buildingId)
+
+      // 5. Vymaž profil správcu
+      await supabaseAdmin.from('profiles').delete().eq('id', userId)
+
+      // 6. Vymaž budovu (cascade zmaže zvyšok)
+      await supabaseAdmin.from('buildings').delete().eq('id', buildingId)
+
+    } else if (profile?.role === 'resident') {
+      // Jednoduchý resident — len vymaž profil
+      await supabaseAdmin.from('profiles').delete().eq('id', userId)
     }
 
-    // Vymaž budovu (cascade zmaže všetko ostatné)
-    await supabaseAdmin
-      .from('buildings')
-      .delete()
-      .eq('id', profile.building_id)
+    // 7. Vymaž Auth používateľa
+    await supabaseAdmin.auth.admin.deleteUser(userId)
+
+    return NextResponse.json({ ok: true })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
   }
-
-  // 2. Vymaž Auth používateľa (cascade zmaže profil)
-  await supabaseAdmin.auth.admin.deleteUser(userId)
-
-  return NextResponse.json({ ok: true })
 }

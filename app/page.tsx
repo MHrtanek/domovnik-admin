@@ -1,3 +1,5 @@
+export const revalidate = 0
+
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import Sidebar from '@/components/Sidebar'
 

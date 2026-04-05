@@ -41,7 +41,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authData ? 'User creation failed' : authError?.message }, { status: 500 })
     }
 
-    const userId = authData.user.id
+    const userId = authData.user.id 
+    // Vymaž profil vytvorený triggerom
+    await supabaseAdmin.from('profiles').delete().eq('id', userId)
 
     // 4. Vytvor profil správcu
     await supabaseAdmin.from('profiles').insert({

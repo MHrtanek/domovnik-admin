@@ -5,13 +5,10 @@ import { Resend } from 'resend'
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 async function deleteUserByEmail(email: string) {
-  // Najdi používateľa v Auth podľa emailu
-  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
+  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
   const existing = users.find(u => u.email === email)
   if (existing) {
-    // Vymaž profil
     await supabaseAdmin.from('profiles').delete().eq('id', existing.id)
-    // Vymaž z Auth
     await supabaseAdmin.auth.admin.deleteUser(existing.id)
   }
 }
@@ -31,7 +28,7 @@ export async function POST(request: NextRequest) {
 
   if (action === 'approve') {
     try {
-      // 0. Ak email už existuje — vymaž ho najprv
+      // 0. Vymaž existujúceho používateľa s týmto emailom
       await deleteUserByEmail(email)
 
       // 1. Vytvor budovu
@@ -42,10 +39,10 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (buildingError || !building) {
-        return NextResponse.json({ error: buildingError?.message }, { status: 500 })
+        return NextResponse.json({ error: 'Chyba pri vytváraní budovy: ' + buildingError?.message }, { status: 500 })
       }
 
-      // 2. Vygeneruj dočasné heslo
+      // 2. Heslo
       const tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!'
 
       // 3. Vytvor Auth používateľa
@@ -57,16 +54,19 @@ export async function POST(request: NextRequest) {
 
       if (authError || !authData.user) {
         await supabaseAdmin.from('buildings').delete().eq('id', building.id)
-        return NextResponse.json({ error: authError?.message }, { status: 500 })
+        return NextResponse.json({ error: 'Chyba pri vytváraní Auth: ' + authError?.message }, { status: 500 })
       }
 
       const userId = authData.user.id
 
-      // 4. Vymaž profil vytvorený triggerom
+      // 4. Počkaj 500ms aby trigger stihol vytvoriť profil
+      await new Promise(r => setTimeout(r, 500))
+
+      // 5. Vymaž profil vytvorený triggerom
       await supabaseAdmin.from('profiles').delete().eq('id', userId)
 
-      // 5. Vytvor profil správcu
-      await supabaseAdmin.from('profiles').insert({
+      // 6. Vytvor správny profil
+      const { error: profileError } = await supabaseAdmin.from('profiles').insert({
         id: userId,
         email,
         full_name: fullName,
@@ -74,32 +74,27 @@ export async function POST(request: NextRequest) {
         building_id: building.id,
       })
 
-      // 6. Napoj správcu na budovu
+      if (profileError) {
+        return NextResponse.json({ error: 'Chyba pri vytváraní profilu: ' + profileError.message }, { status: 500 })
+      }
+
+      // 7. Napoj správcu na budovu
       await supabaseAdmin.from('buildings').update({ manager_id: userId }).eq('id', building.id)
 
-      // 7. Označ žiadosť ako schválenú
+      // 8. Schváľ žiadosť
       await supabaseAdmin.from('registration_requests').update({ status: 'approved' }).eq('id', requestId)
 
-      // 8. Pošli email
-      await resend.emails.send({
-        from: 'Domovník <onboarding@resend.dev>',
-        to: email,
-        subject: 'Váš účet správcu bol schválený – Domovník',
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f0f2f5;padding:40px 20px;">
-            <div style="background:white;border-radius:16px;padding:40px;text-align:center;">
-              <h1 style="color:#1a3a6b;font-size:24px;margin-bottom:8px;">Vitajte v Domovníku!</h1>
-              <p style="color:#666;font-size:15px;margin-bottom:24px;">Váša žiadosť o registráciu správcu bola schválená.</p>
-              <div style="background:#f0f2f5;border-radius:12px;padding:20px;margin-bottom:24px;text-align:left;">
-                <p style="color:#444;margin:0 0 8px 0;font-size:14px;">E-mail: <strong>${email}</strong></p>
-                <p style="color:#444;margin:0;font-size:14px;">Heslo: <strong style="font-family:monospace;background:#e8e8e8;padding:2px 6px;border-radius:4px;">${tempPassword}</strong></p>
-              </div>
-              <a href="https://domovnik-app.vercel.app" style="background-color:#1a3a6b;color:white;padding:14px 32px;text-decoration:none;border-radius:10px;display:inline-block;font-size:16px;font-weight:bold;">Prihlásiť sa →</a>
-              <p style="color:#999;font-size:12px;margin-top:24px;">Po prihlásení si prosím zmeňte heslo v nastaveniach profilu.</p>
-            </div>
-          </div>
-        `,
-      })
+      // 9. Email
+      try {
+        await resend.emails.send({
+          from: 'Domovník <onboarding@resend.dev>',
+          to: email,
+          subject: 'Váš účet správcu bol schválený – Domovník',
+          html: `<p>Heslo: <strong>${tempPassword}</strong></p><p><a href="https://domovnik-app.vercel.app">Prihlásiť sa</a></p>`,
+        })
+      } catch (emailErr) {
+        console.error('Email error:', emailErr)
+      }
 
       return NextResponse.json({ ok: true, tempPassword, email })
     } catch (e: any) {

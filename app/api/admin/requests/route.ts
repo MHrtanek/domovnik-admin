@@ -4,12 +4,37 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+async function deleteUserCompletely(userId: string, buildingId?: string) {
+  if (buildingId) {
+    // Vymaž všetok obsah budovy v správnom poradí
+    await supabaseAdmin.from('poll_votes').delete().eq('building_id', buildingId)
+    await supabaseAdmin.from('poll_options').delete().in('poll_id', 
+      (await supabaseAdmin.from('polls').select('id').eq('building_id', buildingId)).data?.map((p: any) => p.id) ?? []
+    )
+    await supabaseAdmin.from('polls').delete().eq('building_id', buildingId)
+    await supabaseAdmin.from('forum_replies').delete().eq('building_id', buildingId)
+    await supabaseAdmin.from('forum_posts').delete().eq('building_id', buildingId)
+    await supabaseAdmin.from('tickets').delete().eq('building_id', buildingId)
+    await supabaseAdmin.from('announcements').delete().eq('building_id', buildingId)
+    await supabaseAdmin.from('reservations').delete().eq('building_id', buildingId)
+    await supabaseAdmin.from('documents').delete().eq('building_id', buildingId)
+    await supabaseAdmin.from('contacts').delete().eq('building_id', buildingId)
+    await supabaseAdmin.from('invite_codes').delete().eq('building_id', buildingId)
+  }
+  await supabaseAdmin.from('profiles').delete().eq('id', userId)
+  await supabaseAdmin.auth.admin.deleteUser(userId)
+}
+
 async function deleteUserByEmail(email: string) {
   const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
   const existing = users.find(u => u.email === email)
   if (existing) {
-    await supabaseAdmin.from('profiles').delete().eq('id', existing.id)
-    await supabaseAdmin.auth.admin.deleteUser(existing.id)
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('building_id')
+      .eq('id', existing.id)
+      .single()
+    await deleteUserCompletely(existing.id, profile?.building_id ?? undefined)
   }
 }
 
@@ -28,10 +53,8 @@ export async function POST(request: NextRequest) {
 
   if (action === 'approve') {
     try {
-      // 0. Vymaž existujúceho používateľa s týmto emailom
       await deleteUserByEmail(email)
 
-      // 1. Vytvor budovu
       const { data: building, error: buildingError } = await supabaseAdmin
         .from('buildings')
         .insert({ name: buildingName, address: buildingAddress })
@@ -42,10 +65,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Chyba pri vytváraní budovy: ' + buildingError?.message }, { status: 500 })
       }
 
-      // 2. Heslo
       const tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!'
 
-      // 3. Vytvor Auth používateľa
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password: tempPassword,
@@ -58,14 +79,9 @@ export async function POST(request: NextRequest) {
       }
 
       const userId = authData.user.id
-
-      // 4. Počkaj 500ms aby trigger stihol vytvoriť profil
       await new Promise(r => setTimeout(r, 500))
-
-      // 5. Vymaž profil vytvorený triggerom
       await supabaseAdmin.from('profiles').delete().eq('id', userId)
 
-      // 6. Vytvor správny profil
       const { error: profileError } = await supabaseAdmin.from('profiles').insert({
         id: userId,
         email,
@@ -78,13 +94,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Chyba pri vytváraní profilu: ' + profileError.message }, { status: 500 })
       }
 
-      // 7. Napoj správcu na budovu
       await supabaseAdmin.from('buildings').update({ manager_id: userId }).eq('id', building.id)
-
-      // 8. Schváľ žiadosť
       await supabaseAdmin.from('registration_requests').update({ status: 'approved' }).eq('id', requestId)
 
-      // 9. Email
       try {
         await resend.emails.send({
           from: 'Domovník <onboarding@resend.dev>',

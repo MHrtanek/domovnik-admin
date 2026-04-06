@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
 
       try {
         await resend.emails.send({
-          from: 'Domovník <onboarding@resend.dev>',
+          from: 'Domovník <noreply@domovnik.online>',
           to: email,
           subject: 'Váš účet správcu bol schválený – Domovník',
           html: `<p>Heslo: <strong>${tempPassword}</strong></p><p><a href="https://domovnik-app.vercel.app">Prihlásiť sa</a></p>`,

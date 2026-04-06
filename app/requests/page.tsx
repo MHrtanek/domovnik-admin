@@ -1,7 +1,7 @@
 export const revalidate = 0
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import Sidebar from '@/components/Sidebar'
+import PageLayout from '@/components/PageLayout'
 import RequestActions from './RequestActions'
 
 export default async function RequestsPage() {
@@ -11,68 +11,55 @@ export default async function RequestsPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Žiadosti o registráciu</h1>
-        <p className="text-gray-500 mb-8">Správcovia čakajúci na schválenie</p>
+    <PageLayout>
+      <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Žiadosti o registráciu</h1>
+      <p className="text-gray-500 text-sm mb-6">Správcovia čakajúci na schválenie</p>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {!requests || requests.length === 0 ? (
-            <div className="p-12 text-center text-gray-400">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 text-gray-300">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="9" y1="13" x2="15" y2="13"/>
-                <line x1="9" y1="17" x2="15" y2="17"/>
-              </svg>
-              <p>Žiadne čakajúce žiadosti</p>
-            </div>
-          ) : (
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Meno</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">E-mail</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Budova</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Adresa</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Akcia</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {requests.map((req: any) => (
-                  <tr key={req.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900">{req.full_name}</td>
-                    <td className="px-6 py-4 text-gray-600">{req.email}</td>
-                    <td className="px-6 py-4 text-gray-600">{req.building_name}</td>
-                    <td className="px-6 py-4 text-gray-600">{req.building_address}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        req.status === 'pending' ? 'bg-orange-100 text-orange-700' :
-                        req.status === 'approved' ? 'bg-green-100 text-green-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {req.status === 'pending' ? 'Čaká' : req.status === 'approved' ? 'Schválené' : 'Zamietnuté'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <RequestActions
-                        requestId={req.id}
-                        email={req.email}
-                        fullName={req.full_name}
-                        buildingName={req.building_name}
-                        buildingAddress={req.building_address}
-                        status={req.status}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      {!requests || requests.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 text-gray-300">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <p>Žiadne čakajúce žiadosti</p>
         </div>
-      </main>
-    </div>
+      ) : (
+        <div className="space-y-3">
+          {requests.map((req: any) => (
+            <div key={req.id} className="bg-white rounded-xl border border-gray-200 p-4 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="font-semibold text-gray-900">{req.full_name}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      req.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                      req.status === 'approved' ? 'bg-green-100 text-green-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {req.status === 'pending' ? 'Čaká' : req.status === 'approved' ? 'Schválené' : 'Zamietnuté'}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-500">{req.email}</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    <span className="font-medium">{req.building_name}</span>
+                    {req.building_address && <span className="text-gray-400"> · {req.building_address}</span>}
+                  </div>
+                </div>
+                <div className="flex-shrink-0">
+                  <RequestActions
+                    requestId={req.id}
+                    email={req.email}
+                    fullName={req.full_name}
+                    buildingName={req.building_name}
+                    buildingAddress={req.building_address}
+                    status={req.status}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </PageLayout>
   )
 }

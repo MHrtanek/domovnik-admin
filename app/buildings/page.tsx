@@ -7,16 +7,18 @@ import BuildingActions from './BuildingActions'
 export default async function BuildingsPage() {
   const { data: buildings } = await supabaseAdmin
     .from('buildings')
-    .select('*, profiles!buildings_manager_id_fkey(id, full_name, email), profiles!profiles_building_id_fkey(id, role)')
+    .select('*, profiles!buildings_manager_id_fkey(id, full_name, email)')
     .order('created_at', { ascending: false })
 
-  const buildingsWithCount = (buildings || []).map((b: any) => {
-    const allProfiles = Array.isArray(b['profiles!profiles_building_id_fkey']) 
-      ? b['profiles!profiles_building_id_fkey'] 
-      : []
-    const residentCount = allProfiles.filter((p: any) => p.role === 'resident').length
-    return { ...b, residentCount }
-  })
+  // Načítaj počet obyvateľov pre každú budovu zvlášť
+  const buildingsWithCount = await Promise.all((buildings || []).map(async (b: any) => {
+    const { count } = await supabaseAdmin
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('building_id', b.id)
+      .eq('role', 'resident')
+    return { ...b, residentCount: count ?? 0 }
+  }))
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -47,14 +49,12 @@ export default async function BuildingsPage() {
                       <h2 className="font-bold text-gray-900 text-lg">{b.name}</h2>
                     </div>
                     <p className="text-gray-500 text-sm mb-3">{b.address}</p>
-                    
+
                     <div className="flex flex-wrap gap-3 text-sm">
                       <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                           <circle cx="9" cy="7" r="4"/>
-                          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
                         {b.residentCount} obyvateľov
                       </span>
@@ -82,8 +82,8 @@ export default async function BuildingsPage() {
                         Bez správcu
                       </div>
                     )}
-                    
-                    <BuildingActions 
+
+                    <BuildingActions
                       buildingId={b.id}
                       buildingName={b.name}
                       managerId={b.profiles?.id ?? null}

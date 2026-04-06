@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f0f2f5;padding:40px 20px;">
               <div style="background:white;border-radius:16px;padding:40px;text-align:center;">
                 <div style="width:60px;height:60px;background:#1a3a6b;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;">
-                  <span style="color:white;font-size:28px;">🏠</span>
+                  <span style="color:white;font-size:36px;font-weight:900;font-family:Georgia,serif;">D</span>
                 </div>
                 <h1 style="color:#1a3a6b;font-size:24px;margin-bottom:8px;">Vitajte v Domovníku!</h1>
                 <p style="color:#666;font-size:15px;margin-bottom:24px;">Váša žiadosť o registráciu správcu bola schválená.</p>

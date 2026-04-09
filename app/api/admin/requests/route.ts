@@ -40,11 +40,55 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // ── ZAMIETNUTIE ─────────────────────────────────────────────────────────────
   if (action === 'reject') {
     await supabaseAdmin.from('registration_requests').update({ status: 'rejected' }).eq('id', requestId)
+
+    // Odošli email o zamietnutí
+    try {
+      await resend.emails.send({
+        from: 'Domovník <noreply@domovnik.online>',
+        to: email,
+        subject: 'Vaša žiadosť o registráciu bola zamietnutá – Domovník',
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f0f2f5;padding:40px 20px;">
+            <div style="background:white;border-radius:16px;padding:40px;text-align:center;">
+              <div style="width:60px;height:60px;background:#1a3a6b;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;">
+                <span style="color:white;font-size:36px;font-weight:900;font-family:Georgia,serif;">D</span>
+              </div>
+              <h1 style="color:#1a3a6b;font-size:24px;margin-bottom:8px;">Žiadosť zamietnutá</h1>
+              <p style="color:#666;font-size:15px;margin-bottom:24px;">
+                Dobrý deň, ${fullName ? `<strong>${fullName}</strong>` : ''},
+              </p>
+              <p style="color:#666;font-size:15px;margin-bottom:24px;">
+                Vaša žiadosť o registráciu správcu bytového domu
+                ${buildingName ? `<strong>${buildingName}</strong>` : ''}
+                bola po posúdení <strong style="color:#e53935;">zamietnutá</strong>.
+              </p>
+              <div style="background:#fff3f3;border:1px solid #ffcdd2;border-radius:12px;padding:20px;margin-bottom:24px;text-align:left;">
+                <p style="color:#b71c1c;margin:0;font-size:14px;">
+                  Ak si myslíte, že došlo k chybe, alebo máte ďalšie otázky,
+                  kontaktujte nás na
+                  <a href="mailto:support@domovnik.online" style="color:#1a3a6b;">support@domovnik.online</a>.
+                </p>
+              </div>
+              <p style="color:#999;font-size:12px;margin-top:24px;">
+                S pozdravom,<br>
+                <strong style="color:#1a3a6b;">Tím Domovník</strong>
+              </p>
+            </div>
+          </div>
+        `,
+      })
+    } catch (emailErr) {
+      console.error('Reject email error:', emailErr)
+      // Neblokujeme odpoveď – zamietnutie prebehlo, email je best-effort
+    }
+
     return NextResponse.json({ ok: true })
   }
 
+  // ── SCHVÁLENIE ───────────────────────────────────────────────────────────────
   if (action === 'approve') {
     try {
       await deleteUserByEmail(email)
@@ -109,7 +153,7 @@ export async function POST(request: NextRequest) {
                   <p style="color:#444;margin:0 0 8px 0;font-size:14px;">E-mail: <strong>${email}</strong></p>
                   <p style="color:#444;margin:0;font-size:14px;">Heslo: <strong style="font-family:monospace;background:#e8e8e8;padding:2px 6px;border-radius:4px;">${tempPassword}</strong></p>
                 </div>
-                <a href="https://domovnik-app.vercel.app" style="background-color:#1a3a6b;color:white;padding:14px 32px;text-decoration:none;border-radius:10px;display:inline-block;font-size:16px;font-weight:bold;">Prihlásiť sa →</a>
+                <a href="https://domovnik.online" style="background-color:#1a3a6b;color:white;padding:14px 32px;text-decoration:none;border-radius:10px;display:inline-block;font-size:16px;font-weight:bold;">Prihlásiť sa →</a>
                 <p style="color:#999;font-size:12px;margin-top:24px;">Po prihlásení si prosím zmeňte heslo v nastaveniach profilu.</p>
                 <p style="color:#999;font-size:12px;margin-top:8px;">S pozdravom,<br><strong style="color:#1a3a6b;">Tím Domovník</strong></p>
               </div>
@@ -117,7 +161,7 @@ export async function POST(request: NextRequest) {
           `,
         })
       } catch (emailErr) {
-        console.error('Email error:', emailErr)
+        console.error('Approve email error:', emailErr)
       }
 
       return NextResponse.json({ ok: true, tempPassword, email })
